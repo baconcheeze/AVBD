@@ -14,8 +14,8 @@ Manifold::Manifold(Solver* solver, Rigid* A, Rigid* B)
     // 일단 모든 행 초기화
     for (int i = 0; i < MAX_ROWS; ++i) {
         const bool isNormal = (i % 3) == 0;
-        fmin[i] = isNormal ? 0.0f : -INFINITY;  // λ_n ≥ 0만 허용(미는 힘만)
-        fmax[i] = INFINITY;                         // 나머지는 일단 ∞ (마찰은 이후 프레임별로 제한)
+        fmin[i] = isNormal ? COLLISION_MARGIN : -INFINITY;
+        fmax[i] = INFINITY; // λ_n<= 0만 허용(미는 힘만)
         penalty[i] = 0.0f;
         lambda[i] = 0.0f;
     }
@@ -91,12 +91,12 @@ bool Manifold::initialize()
 
         // C0 (법선은 여유 간격 추가, 마찰은 0 목표)
         float3 d0 = pAw - pBw;
-        c.C0.x = (c.n.x * d0.x + c.n.y * d0.y + c.n.z * d0.z) - COLLISION_MARGIN; // 관통이면 +margin>0
-        c.C0.y = (c.u.x * d0.x + c.u.y * d0.y + c.u.z * d0.z); // 접선목표 0
-        c.C0.z = (c.v.x * d0.x + c.v.y * d0.y + c.v.z * d0.z);
+        c.C0.x = dot(c.n,d0) + COLLISION_MARGIN; // 침투 시 C_n > 0 이 되도록 (margin은 여유만큼 더 음수로)
+        c.C0.y = dot(c.u, d0); // 접선목표 0
+        c.C0.z = dot(c.v, d0); 
 
-        // 법선행은 “미는 힘만” (λ_n ≥ 0)
-        fmin[rowN(i)] = 0.0f;
+        // 법선행은 “미는 힘만” (λ_n <= 0)
+        fmin[rowN(i)] = COLLISION_MARGIN;
         fmax[rowN(i)] = INFINITY;
     }
 
@@ -114,29 +114,49 @@ void Manifold::computeConstraint(float alpha)
         float3 dpB = bodyB->x - bodyB->x_initial;
         float3 dtB = rotVec_fromTo(bodyB->q_initial, bodyB->q);
 
-        // 법선
-        C[rowN(i)] = c.C0.x * (1 - alpha)
-            + dot6(c.JAn, dpA, dtA)
-            + dot6(c.JBn, dpB, dtB);
+        float3 pAw_now = bodyA->x + bodyA->R() * c.rA;
+        float3 pBw_now = bodyB->x + bodyB->R() * c.rB;
+        float3 d = pAw_now - pBw_now;
+        float  gap = dot(c.n, d);
 
-        // 접선 u
-        C[rowU(i)] = c.C0.y * (1 - alpha)
-            + dot6(c.JAu, dpA, dtA)
-            + dot6(c.JBu, dpB, dtB);
+#if (USE_INITIALCONSTRAINT)
+        {
+            // 법선
+            C[rowN(i)] = c.C0.x * (1 - alpha)
+                + dot6(c.JAn, dpA, dtA)
+                + dot6(c.JBn, dpB, dtB);
 
-        // 접선 v
-        C[rowV(i)] = c.C0.z * (1 - alpha)
-            + dot6(c.JAv, dpA, dtA)
-            + dot6(c.JBv, dpB, dtB);
+            // 접선 u
+            C[rowU(i)] = c.C0.y * (1 - alpha)
+                + dot6(c.JAu, dpA, dtA)
+                + dot6(c.JBu, dpB, dtB);
 
-        // 최신 λ_n으로 마찰 경계 갱신 (pyramid 근사): |λ_t| ≤ μ |λ_n|
+            // 접선 v
+            C[rowV(i)] = c.C0.z * (1 - alpha)
+                + dot6(c.JAv, dpA, dtA)
+                + dot6(c.JBv, dpB, dtB);
+        }
+#else        
+        {
+            // ★ 법선 제약: 침투(gap<0)면 Cn>0 되어 push-only(λ≥0)로 민다
+            C[rowN(i)] = (gap + COLLISION_MARGIN);
+
+            // 접선 제약은 현재 상대변위로(목표 0)
+            C[rowU(i)] = dot(c.u, d);
+            C[rowV(i)] = dot(c.v, d);
+        }
+#endif
+        // λ_n ≤ 0 체계: 마찰 경계는 μ * |λ_n|
+        
+        float tu = dot(c.u, d);
+        float tv = dot(c.v, d);
         float bound = mu * std::max(0.0f, lambda[rowN(i)]);
         fmax[rowU(i)] = +bound;  fmin[rowU(i)] = -bound;
         fmax[rowV(i)] = +bound;  fmin[rowV(i)] = -bound;
 
-        // 정지마찰 판정(다음 프레임 앵커 유지 판단)
         c.stickU = (std::fabs(lambda[rowU(i)]) < bound) && (std::fabs(c.C0.y) < STICK_THRESH);
         c.stickV = (std::fabs(lambda[rowV(i)]) < bound) && (std::fabs(c.C0.z) < STICK_THRESH);
+
     }
 }
 
