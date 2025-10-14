@@ -75,6 +75,12 @@ SolverProcessOutput Solver::step()
             }
             // 재질 강성으로 상한
             f->penalty[i] = std::min(f->penalty[i], f->stiffness[i]);
+
+            if (f->isJoint())
+            {
+              // f->lambda[i] = 0.0f;
+              // f->penalty[i] = std::min(f->stiffness[i], PENALTY_MAX);
+            }
         }
         f = f->next;
     }
@@ -228,22 +234,57 @@ SolverProcessOutput Solver::step()
             for (int k = 0; k < (int)forceList.size(); ++k)
             {
                 Force* f = forceList[k];
+
+               // if (f->isJoint())
+               //     continue;
+
                 //if (f->isContact() == false) continue;
                 f->computeConstraint(currentAlpha);
                 for (int i = 0; i < f->rows(); ++i)
                 {
-                    const float lambda = std::isinf(f->stiffness[i]) ? f->lambda[i] : 0.0f;
-
+                    const float lambdaOld = f->lambda[i];
+                    const float lambdaBase = std::isinf(f->stiffness[i]) ? lambdaOld : 0.0f;
+                    const float lambdaProp = f->penalty[i] * f->C[i] + lambdaBase;
                     // λ ← clamp(ρC + λ, [fmin,fmax])
-                    f->lambda[i] = std::clamp(f->penalty[i] * f->C[i] + lambda, f->fmin[i], f->fmax[i]);
+                    if (f->isJoint())
+                    {
+                        // 관절: 한 번에 바뀌는 λ 크기 제한 (토크 과주입 방지)
+                        const float ki = std::isinf(f->stiffness[i]) ? 1e6f : f->stiffness[i];
+                        const float dLamMax = 0.1f * ki * dt; // 0.2~1.0 배수에서 조절 가능
+                        float dLam = lambdaProp - lambdaOld;
+                        if (dLam > dLamMax) dLam = dLamMax;
+                        if (dLam < -dLamMax) dLam = -dLamMax;
+                        f->lambda[i] = lambdaOld + dLam;
+                    }
+                    else
+                    {
+                        // 접촉 등: 종전 방식
+                        f->lambda[i] = lambdaProp;
+                    }
 
                     // 파단
                     if (std::fabs(f->lambda[i]) >= f->fracture[i]) f->disable();
 
                     // 페널티 램핑
-                    if (f->lambda[i] > f->fmin[i] && f->lambda[i] < f->fmax[i]) {
-                        f->penalty[i] = std::min(f->penalty[i] + beta * std::fabs(f->C[i]),
-                            std::min(PENALTY_MAX, f->stiffness[i]));
+                    if (f->lambda[i] > f->fmin[i] && f->lambda[i] < f->fmax[i])
+                    {
+                        if (f->isJoint()==false)
+                        {
+                            // 접촉은 기존처럼 램핑
+                            f->penalty[i] = std::min(
+                                f->penalty[i] + beta * std::fabs(f->C[i]),
+                                std::min(PENALTY_MAX, f->stiffness[i])
+                            );
+                        }
+                        else
+                        {
+                            // 관절은 램핑 막기(혹은 아주 약하게 하고 싶으면 아래 주석 해제해서 0.2배 등으로)
+                             f->penalty[i] = std::min(
+                                 f->penalty[i] + 0.2f * beta * std::fabs(f->C[i]),
+                                 std::min(PENALTY_MAX, f->stiffness[i])
+                             );
+                            //f->penalty[i] = std::min(f->penalty[i], f->stiffness[i]);
+                        }
                     }
                 }
             }
