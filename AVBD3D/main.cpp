@@ -32,18 +32,18 @@ static bool      gRunning = true;
 
 static Solver* solver = new Solver();
 
-// Ä«¸Ş¶ó
-static float   camZoom = 25.0f;             // Ä¿Áú¼ö·Ï ´õ "ÁÜ ÀÎ"µÇµµ·Ï FOV Á¶Àı¿¡ »ç¿ë
-static float3  camPos = { -7.3f, 10.1f, 7.9f }; // +Z¿¡¼­ -Z·Î ¹Ù¶óº¸´Â OpenGL ±Ô¾à ±âÁØ
-static int     currScene = 0;               // ÇöÀç scenes[] ÇÏ³ª»ÓÀÌ¹Ç·Î 0
+// ì¹´ë©”ë¼
+static float   camZoom = 25.0f;             // ì»¤ì§ˆìˆ˜ë¡ ë” "ì¤Œ ì¸"ë˜ë„ë¡ FOV ì¡°ì ˆì— ì‚¬ìš©
+static float3  camPos = { -7.3f, 10.1f, 7.9f }; // +Zì—ì„œ -Zë¡œ ë°”ë¼ë³´ëŠ” OpenGL ê·œì•½ ê¸°ì¤€
+static int     currScene = 0;               
 static bool    paused = false;
 
-// FPS½Ä È¸Àü(Ä«¸Ş¶ó °íÁ¤, ¹æÇâ¸¸ È¸Àü)
-static float   camYawDeg = 140.7f;   // Yaw  (ÁÂ¿ì)
-static float   camPitchDeg = -9.3f;   // Pitch(À§¾Æ·¡)
-static bool    mbRight = false;   // ¿ìÅ¬¸¯ µå·¡±×·Î È¸Àü
+// FPSì‹ íšŒì „(ì¹´ë©”ë¼ ê³ ì •, ë°©í–¥ë§Œ íšŒì „)
+static float   camYawDeg = 140.7f;   // Yaw  (ì¢Œìš°)
+static float   camPitchDeg = -9.3f;   // Pitch(ìœ„ì•„ë˜)
+static bool    mbRight = false;   // ìš°í´ë¦­ ë“œë˜ê·¸ë¡œ íšŒì „
 
-// ÀÔ·Â »óÅÂ(ÆÒ)
+// ì…ë ¥ ìƒíƒœ(íŒ¬)
 static bool  mbMiddle = false;
 static POINT prevMouse{ 0,0 };
 
@@ -60,34 +60,34 @@ static inline float3 cross3(float3 a, float3 b) {
     return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
 }
 
-// yaw/pitch ¡æ forward/right/up
+// yaw/pitch â†’ forward/right/up
 static void cameraAxes(float3& fwd, float3& right, float3& up) {
     const float cy = std::cos(rad(camYawDeg)), sy = std::sin(rad(camYawDeg));
     const float cp = std::cos(rad(camPitchDeg)), sp = std::sin(rad(camPitchDeg));
 
-    // OpenGL ±âÁØ(-Z°¡ ±âº» ½Ã¼±)ÀÌÁö¸¸ ¿ì¸° lookAtÀ¸·Î Á¤¸®ÇÏ´Ï ÀÏ¹İÀû Á¤ÀÇ »ç¿ë
-    fwd = normalize3({ cp * sy, sp, cp * cy });            // Àü¹æ
+    // OpenGL ê¸°ì¤€(-Zê°€ ê¸°ë³¸ ì‹œì„ )ì´ì§€ë§Œ ìš°ë¦° lookAtìœ¼ë¡œ ì •ë¦¬í•˜ë‹ˆ ì¼ë°˜ì  ì •ì˜ ì‚¬ìš©
+    fwd = normalize3({ cp * sy, sp, cp * cy });            // ì „ë°©
     const float3 worldUp = { 0,1,0 };
-    right = normalize3(cross3(fwd, worldUp));          // ¿À¸¥ÂÊ
-    up = normalize3(cross3(right, fwd));            // À§ÂÊ(Á¤±ÔÁ÷±³)
+    right = normalize3(cross3(fwd, worldUp));          // ì˜¤ë¥¸ìª½
+    up = normalize3(cross3(right, fwd));            // ìœ„ìª½(ì •ê·œì§êµ)
 }
 
-// LookAt(view) ·Îµå (gluLookAt ¾øÀÌ)
+// LookAt(view) ë¡œë“œ (gluLookAt ì—†ì´)
 static void loadLookAt(const float3& eye, const float3& target, const float3& upW)
 {
     float3 f = normalize3({ target.x - eye.x, target.y - eye.y, target.z - eye.z });
     float3 s = normalize3(cross3(f, upW));
     float3 u = cross3(s, f);
 
-    // rotation¸¸ column-major·Î ÀûÀç
+    // rotationë§Œ column-majorë¡œ ì ì¬
     float M[16] = {
         s.x, u.x, -f.x, 0.0f,
         s.y, u.y, -f.y, 0.0f,
         s.z, u.z, -f.z, 0.0f,
         0.0f,0.0f, 0.0f, 1.0f
     };
-    glMultMatrixf(M);                     // È¸Àü
-    glTranslatef(-eye.x, -eye.y, -eye.z); // ÀÌµ¿(¿ªº¯È¯)
+    glMultMatrixf(M);                     // íšŒì „
+    glTranslatef(-eye.x, -eye.y, -eye.z); // ì´ë™(ì—­ë³€í™˜)
 }
 
 
@@ -95,7 +95,7 @@ static void loadLookAt(const float3& eye, const float3& target, const float3& up
 
 
 
-// °£´ÜÇÑ Åõ¿µÇà·Ä(ÆÛ½ºÆåÆ¼ºê) ¼³Á¤ + ±âº» ·»´õ ½ºÅ×ÀÌÆ®
+// ê°„ë‹¨í•œ íˆ¬ì˜í–‰ë ¬(í¼ìŠ¤í™í‹°ë¸Œ) ì„¤ì • + ê¸°ë³¸ ë Œë” ìŠ¤í…Œì´íŠ¸
 static void setupGL()
 {
     RECT rc; GetClientRect(hWnd, &rc);
@@ -138,7 +138,7 @@ static void setupGL()
     float3 fwd, rgt, up;
     cameraAxes(fwd, rgt, up);
     float3 target = { camPos.x + fwd.x, camPos.y + fwd.y, camPos.z + fwd.z };
-    loadLookAt(camPos, target, { 0,1,0 }); // upÀº worldUp ½áµµ OK
+    loadLookAt(camPos, target, { 0,1,0 }); // upì€ worldUp ì¨ë„ OK
 }
 
 
@@ -147,16 +147,16 @@ static void drawGrid(float y = 0.0f, int half = 20, float step = 1.0f)
     glColor4f(0.7f, 0.7f, 0.7f, 0.25f);
     glBegin(GL_LINES);
     for (int i = -half; i <= half; ++i) {
-        // X ¹æÇâ ¶óÀÎ
+        // X ë°©í–¥ ë¼ì¸
         glVertex3f(-half * step, y, i * step);
         glVertex3f(+half * step, y, i * step);
-        // Z ¹æÇâ ¶óÀÎ
+        // Z ë°©í–¥ ë¼ì¸
         glVertex3f(i * step, y, -half * step);
         glVertex3f(i * step, y, +half * step);
     }
     glEnd();
 
-    // Ãà Ç¥½Ã
+    // ì¶• í‘œì‹œ
     glLineWidth(3.0f);
     // X-red
     glColor3f(0.9f, 0.2f, 0.2f); glBegin(GL_LINES);
@@ -170,7 +170,7 @@ static void drawGrid(float y = 0.0f, int half = 20, float step = 1.0f)
     glLineWidth(2.0f);
 }
 
-// WGL ÄÁÅØ½ºÆ® »ı¼º
+// WGL ì»¨í…ìŠ¤íŠ¸ ìƒì„±
 static void createGLContext(HWND hwnd)
 {
     hDC = GetDC(hwnd);
@@ -180,7 +180,7 @@ static void createGLContext(HWND hwnd)
     pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
     pfd.iPixelType = PFD_TYPE_RGBA;
     pfd.cColorBits = 24;
-    pfd.cDepthBits = 24;   // 3D ±íÀÌ Å×½ºÆ®¿ë
+    pfd.cDepthBits = 24;   // 3D ê¹Šì´ í…ŒìŠ¤íŠ¸ìš©
     pfd.cStencilBits = 8;
     pfd.iLayerType = PFD_MAIN_PLANE;
 
@@ -197,7 +197,7 @@ static void destroyGL()
     if (hDC) { ReleaseDC(hWnd, hDC); hDC = nullptr; }
 }
 
-// È­¸é ÁÂÇ¥ ÀÌµ¿·®À» Ä«¸Ş¶ó °ø°£À¸·Î ´ëÃæ ¸ÊÇÎ(ÆÒ ¼Óµµ)
+// í™”ë©´ ì¢Œí‘œ ì´ë™ëŸ‰ì„ ì¹´ë©”ë¼ ê³µê°„ìœ¼ë¡œ ëŒ€ì¶© ë§µí•‘(íŒ¬ ì†ë„)
 static void panByPixels(int dx, int dy)
 {
     float scale = (25.0f / camZoom) * 0.02f;
@@ -205,7 +205,7 @@ static void panByPixels(int dx, int dy)
     float3 fwd, right, up;
     cameraAxes(fwd, right, up);
 
-    // È­¸é¿¡¼­ +X´Â ¿À¸¥ÂÊ, +Y´Â ¾Æ·¡ ¡æ world¿¡¼± UpÀº ¹İ´ë·Î(+Y À§)
+    // í™”ë©´ì—ì„œ +XëŠ” ì˜¤ë¥¸ìª½, +YëŠ” ì•„ë˜ â†’ worldì—ì„  Upì€ ë°˜ëŒ€ë¡œ(+Y ìœ„)
     camPos.x += (-dx) * scale * right.x + (dy)*scale * up.x;
     camPos.y += (-dx) * scale * right.y + (dy)*scale * up.y;
     camPos.z += (-dx) * scale * right.z + (dy)*scale * up.z;
@@ -224,7 +224,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         return 0;
 
     case WM_SIZE:
-        // ¸®»çÀÌÁî´Â ´ÙÀ½ frameÀÇ setupGL¿¡¼­ Ã³¸®
+        // ë¦¬ì‚¬ì´ì¦ˆëŠ” ë‹¤ìŒ frameì˜ setupGLì—ì„œ ì²˜ë¦¬
         return 0;
 
     case WM_MOUSEWHEEL:
@@ -258,8 +258,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             panByPixels(dx, dy);
         }
         if (mbRight) {
-            camYawDeg -= dx * 0.1f;        // ÁÂ¿ì È¸Àü
-            camPitchDeg -= dy * 0.1f;       // À§¾Æ·¡(¸¶¿ì½º ¿Ã¸®¸é pitch Áõ°¡)
+            camYawDeg -= dx * 0.1f;        // ì¢Œìš° íšŒì „
+            camPitchDeg -= dy * 0.1f;       // ìœ„ì•„ë˜(ë§ˆìš°ìŠ¤ ì˜¬ë¦¬ë©´ pitch ì¦ê°€)
             camPitchDeg = std::clamp(camPitchDeg, -89.0f, 89.0f);
         }
 
@@ -274,14 +274,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         if (wParam == 'P') { paused = !paused; return 0; }
         if (wParam == 'R') { scenes[currScene](solver); return 0; }
 
-        // FOV ÁÜ
+        // FOV ì¤Œ
         if (wParam == 'Q') camZoom = std::clamp(camZoom / 1.05f, 5.0f, 120.0f);
         if (wParam == 'E') camZoom = std::clamp(camZoom * 1.05f, 5.0f, 120.0f);
 
-        // ¼±ÅÃ: WASD ·ÎÄÃ ÀÌµ¿
+        // ì„ íƒ: WASD ë¡œì»¬ ì´ë™
         float3 fwd, right, up;
         cameraAxes(fwd, right, up);
-        float move = 0.3f * (25.0f / camZoom);  // FOV¿¡ µû¶ó º¸Æø ½ºÄÉÀÏ
+        float move = 0.3f * (25.0f / camZoom);  // FOVì— ë”°ë¼ ë³´í­ ìŠ¤ì¼€ì¼
 
         if (wParam == 'W') { camPos.x += fwd.x * move; camPos.y += fwd.y * move; camPos.z += fwd.z * move; }
         if (wParam == 'S') { camPos.x -= fwd.x * move; camPos.y -= fwd.y * move; camPos.z -= fwd.z * move; }
@@ -318,7 +318,7 @@ static void frame()
         bucketSize = solver->step();
     solver->draw();
 
-    // --- Å¸ÀÌÆ²¿¡ µğ¹ö±× ¼ıÀÚ Ç¥½Ã ---
+    // --- íƒ€ì´í‹€ì— ë””ë²„ê·¸ ìˆ«ì í‘œì‹œ ---
     static bool inited = false;
     static LARGE_INTEGER freq, tPrev;
     static double fps = 0.0, accTitle = 0.0;
@@ -353,10 +353,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 {
     hInst = hInstance;
 
-    // Win32 Ã¢ ¸¸µé±â
+    // Win32 ì°½ ë§Œë“¤ê¸°
     WNDCLASS wc = {};
     wc.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WndProc;                // ¡ç WndProc ÁöÁ¤
+    wc.lpfnWndProc = WndProc;                // â† WndProc ì§€ì •
     wc.hInstance = hInst;
     wc.lpszClassName = L"AVBD_MinWin";
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
@@ -372,12 +372,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 
     createGLContext(hWnd);
 
-    // ÃÊ±â ÆÄ¶ó¹ÌÅÍ´Â solver ±âº»°ª ±×´ë·Î »ç¿ë
+    // ì´ˆê¸° íŒŒë¼ë¯¸í„°ëŠ” solver ê¸°ë³¸ê°’ ê·¸ëŒ€ë¡œ ì‚¬ìš©
     solver->defaultParams();
-    // ¿øÇÏ´Â scene ·Îµå (Áö±İÀº 0¹ø ÇÏ³ª)
+    // ì›í•˜ëŠ” scene ë¡œë“œ (ì§€ê¸ˆì€ 0ë²ˆ í•˜ë‚˜)
     scenes[currScene](solver);
 
-    // ¸Ş½ÃÁö·çÇÁ + ÇÁ·¹ÀÓ Å¸ÀÌ¹Ö
+    // ë©”ì‹œì§€ë£¨í”„ + í”„ë ˆì„ íƒ€ì´ë°
     MSG msg;
     LARGE_INTEGER freq, t0, t1; QueryPerformanceFrequency(&freq); QueryPerformanceCounter(&t0);
     double acc = 0.0;
@@ -396,7 +396,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
         t0 = t1;
         acc += dt;
 
-        // ³Ê¹« ºü¸£°Ô µ¹¸é 120FPS·Î ¾ïÁ¦(ÀÓ½Ã)
+        // ë„ˆë¬´ ë¹ ë¥´ê²Œ ëŒë©´ 120FPSë¡œ ì–µì œ(ì„ì‹œ)
         if (acc < 1.0 / 120.0) { Sleep(1); continue; }
 
         frame();
