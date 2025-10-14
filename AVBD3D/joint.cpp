@@ -127,6 +127,7 @@ bool Joint::initialize()
     return posActive || swingActive || twistActive;
 }
 
+/*
 void Joint::computeConstraint(float alpha)
 {
     // --- 위치 3행 ---
@@ -161,6 +162,45 @@ void Joint::computeConstraint(float alpha)
         C[5] = 0.0f;
     }
 }
+*/
+
+
+void Joint::computeConstraint(float alpha)
+{
+    // Δx, Δθ (초기 상태 대비)
+    const float3 dpA = A ? (A->x - A->x_initial) : float3{ 0,0,0 };
+    const float3 dtA = A ? rotVec_fromTo(A->q_initial, A->q) : float3{ 0,0,0 };
+    const float3 dpB = B ? (B->x - B->x_initial) : float3{ 0,0,0 };
+    const float3 dtB = B ? rotVec_fromTo(B->q_initial, B->q) : float3{ 0,0,0 };
+
+    // --- 위치 3행: contact와 동일한 선형화 ---
+    // Ji_A = [ dir,  rA×dir ], Ji_B = [ -dir, -(rB×dir) ]
+    // C = C0*(1-α) + Ji_A·[dpA,dtA] + Ji_B·[dpB,dtB]
+    static const float3 ex{ 1,0,0 }, ey{ 0,1,0 }, ez{ 0,0,1 };
+
+    auto addPosRow = [&](int row, const float3& dir) {
+        float c = C0[row] * (1.0f - alpha);
+        if (A) c += dot6(Jrow_A_pointDir(*A, rA_local, dir), dpA, dtA);
+        if (B) c += dot6(Jrow_B_pointDir(*B, rB_local, dir), dpB, dtB);
+        C[row] = c;
+    };
+    addPosRow(0, ex);
+    addPosRow(1, ey);
+    addPosRow(2, ez);
+
+    // --- 스윙 2행 & 트위스트 1행: 순수 회전 증분 ---
+    // J_A = [0, -basis], J_B = [0, +basis] → C = C0*(1-α) + basis·(dtB - dtA)
+    auto addRotRow = [&](int row, const float3& basisW) {
+        float c = C0[row] * (1.0f - alpha);
+        c += basisW.x * (dtB.x - dtA.x) + basisW.y * (dtB.y - dtA.y) + basisW.z * (dtB.z - dtA.z);
+        C[row] = c;
+    };
+    addRotRow(3, swingU);
+    addRotRow(4, swingV);
+    if (enableTwist) addRotRow(5, axisW_fixed);
+    else             C[5] = 0.0f;
+}
+
 
 void Joint::computeDerivatives(Rigid* body)
 {
