@@ -6,43 +6,43 @@
 
 #include "solver.h"
 
-// bodiesHead : solver°¡ °¡Áø ¹Ùµğ ´ÜÀÏ ¿¬°á¸®½ºÆ®(head)
-// buckets    : »ö±òº° ¹Ùµğ ¹­À½ (Ãâ·Â)
-// colorOf    : ¹Ùµğ Æ÷ÀÎÅÍ -> »ö ÀÎµ¦½º (Ãâ·Â)
-// return     : »ö °³¼ö
+// bodiesHead : solverê°€ ê°€ì§„ ë°”ë”” ë‹¨ì¼ ì—°ê²°ë¦¬ìŠ¤íŠ¸(head)
+// buckets    : ìƒ‰ê¹”ë³„ ë°”ë”” ë¬¶ìŒ (ì¶œë ¥)
+// colorOf    : ë°”ë”” í¬ì¸í„° -> ìƒ‰ ì¸ë±ìŠ¤ (ì¶œë ¥)
+// return     : ìƒ‰ ê°œìˆ˜
 int buildBodyColors(Rigid* bodiesHead,
     std::vector<std::vector<Rigid*>>& buckets,
     std::unordered_map<Rigid*, int>& colorOf)
 {
-    // 1) µ¿Àû ¹Ùµğ ¼öÁı
+    // 1) ë™ì  ë°”ë”” ìˆ˜ì§‘
     std::vector<Rigid*> nodes;
     nodes.reserve(256);
     for (Rigid* b = bodiesHead; b; b = b->next) {
-        if (b->mass > 0) nodes.push_back(b); // Á¤Àû/Å°³×¸ÅÆ½Àº ½ºÅµ
+        if (b->mass > 0) nodes.push_back(b); // ì •ì /í‚¤ë„¤ë§¤í‹±ì€ ìŠ¤í‚µ
     }
     const int n = (int)nodes.size();
     if (n == 0) { buckets.clear(); colorOf.clear(); return 0; }
 
-    // Æ÷ÀÎÅÍ -> ÀÎµ¦½º ¸ÅÇÎ
+    // í¬ì¸í„° -> ì¸ë±ìŠ¤ ë§¤í•‘
     std::unordered_map<Rigid*, int> idx;
     idx.reserve(n * 2);
     for (int i = 0; i < n; ++i) idx[nodes[i]] = i;
 
-    // 2) ÀÎÁ¢ ¸®½ºÆ® »ı¼º(°£¼±: Force°¡ ¾çÂÊ ¹Ùµğ¸¦ ¿¬°áÇÏ´Â °æ¿ì)
+    // 2) ì¸ì ‘ ë¦¬ìŠ¤íŠ¸ ìƒì„±(ê°„ì„ : Forceê°€ ì–‘ìª½ ë°”ë””ë¥¼ ì—°ê²°í•˜ëŠ” ê²½ìš°)
     std::vector<std::vector<int>> adj(n);
     for (int i = 0; i < n; ++i) {
         Rigid* bi = nodes[i];
         for (Force* f = bi->forces; f; f = (f->bodyA == bi) ? f->nextA : f->nextB) {
             Rigid* A = f->bodyA;
             Rigid* B = f->bodyB;
-            // µÎ ¹Ùµğ ¸ğµÎ Á¸ÀçÇÏ°í µ¿ÀûÀÏ ¶§¸¸ °£¼±
+            // ë‘ ë°”ë”” ëª¨ë‘ ì¡´ì¬í•˜ê³  ë™ì ì¼ ë•Œë§Œ ê°„ì„ 
             if (!A || !B) continue;
             if (A->mass <= 0 || B->mass <= 0) continue;
 
-            // biÀÇ ¹İ´ëÆí Ã£±â
+            // biì˜ ë°˜ëŒ€í¸ ì°¾ê¸°
             Rigid* bj = (A == bi) ? B : A;
             auto it = idx.find(bj);
-            if (it == idx.end()) continue; // µ¿ÀûÁıÇÕ¿¡ ¾øÀ¸¸é ½ºÅµ
+            if (it == idx.end()) continue; // ë™ì ì§‘í•©ì— ì—†ìœ¼ë©´ ìŠ¤í‚µ
 
             int j = it->second;
             if (i == j) continue;
@@ -50,14 +50,14 @@ int buildBodyColors(Rigid* bodiesHead,
             adj[j].push_back(i);
         }
     }
-    // Áßº¹ Á¦°Å
+    // ì¤‘ë³µ ì œê±°
     for (int i = 0; i < n; ++i) {
         auto& v = adj[i];
         std::sort(v.begin(), v.end());
         v.erase(std::unique(v.begin(), v.end()), v.end());
     }
 
-    // 3) Â÷¼ö ³»¸²Â÷¼ø ¼ø¼­·Î ±×¸®µğ ÄÃ·¯¸µ
+    // 3) ì°¨ìˆ˜ ë‚´ë¦¼ì°¨ìˆœ ìˆœì„œë¡œ ê·¸ë¦¬ë”” ì»¬ëŸ¬ë§
     std::vector<int> order(n);
     std::iota(order.begin(), order.end(), 0);
     std::sort(order.begin(), order.end(),
@@ -65,7 +65,7 @@ int buildBodyColors(Rigid* bodiesHead,
 
     std::vector<int> color(n, -1);
     int maxColor = -1;
-    std::vector<char> used; // ÀÎÁ¢ »ö »ç¿ëÇ¥
+    std::vector<char> used; // ì¸ì ‘ ìƒ‰ ì‚¬ìš©í‘œ
 
     for (int k = 0; k < n; ++k) {
         int u = order[k];
@@ -79,7 +79,7 @@ int buildBodyColors(Rigid* bodiesHead,
         if (c > maxColor) maxColor = c;
     }
 
-    // 4) °á°ú ¹­À½ & ¸Ê Ã¤¿ì±â
+    // 4) ê²°ê³¼ ë¬¶ìŒ & ë§µ ì±„ìš°ê¸°
     buckets.assign(static_cast<char>(maxColor + 1), {});
     buckets.shrink_to_fit();
     colorOf.clear(); colorOf.reserve(n * 2);
