@@ -35,8 +35,10 @@ static Solver* solver = new Solver();
 // 카메라
 static float   camZoom = 25.0f;             // 커질수록 더 "줌 인"되도록 FOV 조절에 사용
 static float3  camPos = { -7.3f, 10.1f, 7.9f }; // +Z에서 -Z로 바라보는 OpenGL 규약 기준
-static int     currScene = 0;               
+static int     currScene = 1;               
 static bool    paused = false;
+// globals
+static bool gCullCW = true;
 
 // FPS식 회전(카메라 고정, 방향만 회전)
 static float   camYawDeg = 140.7f;   // Yaw  (좌우)
@@ -107,7 +109,13 @@ static void setupGL()
     glViewport(0, 0, w, h);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glDisable(GL_CULL_FACE);
+    //glDisable(GL_CULL_FACE);
+    // ✅ 백페이스 컬링 켜기
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);     // 뒤쪽 면 버림
+    glFrontFace(GL_CCW);     // 정면은 CCW(반시계)로 간주 (모델이 CW면 GL_CW로 바꿔요)
+
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_LINE_SMOOTH);
@@ -139,6 +147,8 @@ static void setupGL()
     cameraAxes(fwd, rgt, up);
     float3 target = { camPos.x + fwd.x, camPos.y + fwd.y, camPos.z + fwd.z };
     loadLookAt(camPos, target, { 0,1,0 }); // up은 worldUp 써도 OK
+
+    //glFrontFace(gCullCW ? GL_CW : GL_CCW);
 }
 
 
@@ -282,7 +292,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         float3 fwd, right, up;
         cameraAxes(fwd, right, up);
         float move = 0.3f * (25.0f / camZoom);  // FOV에 따라 보폭 스케일
-
+        if (wParam == 'F') { gCullCW = !gCullCW; return 0; }
         if (wParam == 'W') { camPos.x += fwd.x * move; camPos.y += fwd.y * move; camPos.z += fwd.z * move; }
         if (wParam == 'S') { camPos.x -= fwd.x * move; camPos.y -= fwd.y * move; camPos.z -= fwd.z * move; }
         if (wParam == 'A') { camPos.x -= right.x * move; camPos.y -= right.y * move; camPos.z -= right.z * move; }
@@ -313,9 +323,9 @@ static void frame()
     setupGL();
     drawGrid();
 
-    int bucketSize = 0;
+    SolverProcessOutput solverProcessOutput;   
     if (!paused)
-        bucketSize = solver->step();
+        solverProcessOutput = solver->step();
     solver->draw();
 
     // --- 타이틀에 디버그 숫자 표시 ---
@@ -339,8 +349,8 @@ static void frame()
     accTitle += dt;
     if (accTitle > 0.25) {
         wchar_t title[256];
-        swprintf(title, 256, L"AVBD 3D | FPS: %.1f | Zoom: %.2f | Pos(%.1f,%.1f,%.1f) | Yaw %.1f Pitch %.1f",
-            fps, camZoom, camPos.x, camPos.y, camPos.z, camYawDeg, camPitchDeg);
+        swprintf(title, 256, L"bucketSize : %d | JointCount : %d | ManifoldCount : %d | FPS: %.1f | Zoom: %.2f | Pos(%.1f,%.1f,%.1f) | Yaw %.1f Pitch %.1f",
+            solverProcessOutput.bucketSize, solverProcessOutput.jointCount, solverProcessOutput.manifoldCount,fps, camZoom, camPos.x, camPos.y, camPos.z, camYawDeg, camPitchDeg);
         SetWindowTextW(hWnd, title);
         accTitle = 0.0;
     }
