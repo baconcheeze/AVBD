@@ -239,6 +239,21 @@ void Joint::computeDerivatives(Rigid* body)
     // Hessian은 0으로 (필요하면 대각 근사만 넣어도 됨)
     auto zeroH = [&](int i) { for (int r = 0; r < 6; ++r) for (int c = 0; c < 6; ++c) H[i].m[r][c] = 0.0f; };
     zeroH(0); zeroH(1); zeroH(2); zeroH(3); zeroH(4); if (enableTwist) zeroH(5);
+
+    // Joint::computeDerivatives() 끝부분에 추가(또는 기존 zeroH 앞뒤로)
+    auto addAngularDampToRow = [&](int row, float kd) {
+        // 각도 컬럼에만 작은 값 배치 → colL2() 통해 addDiag(lhs, gdiag)에 들어감
+        for (int k = 0; k < 6; k++) for (int r = 0; r < 6; r++) H[row].m[r][k] = 0.0f; // 안전하게 초기화
+        H[row].m[3][3] = kd; // Rx
+        H[row].m[4][4] = kd; // Ry
+        H[row].m[5][5] = kd; // Rz
+    };
+
+    const float kd = 0.2f; // 0.02~0.2 사이에서 조절
+    addAngularDampToRow(3, kd); // swing U
+    addAngularDampToRow(4, kd); // swing V
+    if (enableTwist) addAngularDampToRow(5, kd);
+
 }
 
 void Joint::draw() const
