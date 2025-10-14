@@ -246,26 +246,13 @@ int Manifold::collide(Rigid* A, Rigid* B, Contact* out, int maxOut)
 
         // 접촉점 기록
         for (int i = 0; i < nOut; ++i) {
-            const float3 pW = cand[i].p;     // 참조면 위의 점
+            const float3 pW = cand[i].p;      // pRef(참조면 위의 점)
             const float3x3 RAT = transpose3x3(RA);
             const float3x3 RBT = transpose3x3(RB);
 
-            out[i].n = nRef; // 항상 A→B
-            // cand[i].idx 는 clipped[]의 원래 인덱스
-            const int vidx = cand[i].idx;
-            const float3 pRef = cand[i].p;          // 참조면 위로 정사영된 점
-            const float3 pInc = clipped[vidx];      // 정사영 전 incident 정점 (클립 결과)
-
-            if (refIsA) {
-                // A가 참조면: A는 pRef, B는 원래 incident
-                out[i].rA = RAT * (pRef - cA);
-                out[i].rB = RBT * (pInc - cB);
-            }
-            else {
-                // B가 참조면: B는 pRef, A는 원래 incident
-                out[i].rA = RAT * (pInc - cA);
-                out[i].rB = RBT * (pRef - cB);
-            }
+            out[i].n = nRef;                 // 항상 A→B
+            out[i].rA = RAT * (pW - cA);      // 둘 다 같은 pW를 로컬로 변환
+            out[i].rB = RBT * (pW - cB);
 
             // feature id (간단 태깅)
             uint64_t fid = 0;
@@ -328,9 +315,10 @@ int Manifold::collide(Rigid* A, Rigid* B, Contact* out, int maxOut)
     const float3x3 RAT = transpose3x3(RA);
     const float3x3 RBT = transpose3x3(RB);
 
+    const float3 pc = (pA + pB) * 0.5f;
     out[0].n = n;
-    out[0].rA = RAT * (pA - cA);
-    out[0].rB = RBT * (pB - cB);
+    out[0].rA = RAT * (pc - cA);
+    out[0].rB = RBT * (pc - cB);
 
     uint64_t fid = 0;
     fid |= (uint64_t)3 << 60; // edge-edge
