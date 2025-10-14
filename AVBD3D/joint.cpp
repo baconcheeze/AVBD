@@ -1,4 +1,4 @@
-﻿// ----- Joint.cpp -----
+// ----- Joint.cpp -----
 #include "solver.h"
 #include <algorithm>
 #include <cmath>
