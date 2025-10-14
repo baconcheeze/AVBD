@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "solver.h"
 
@@ -214,7 +214,8 @@ int Manifold::collide(Rigid* A, Rigid* B, Contact* out, int maxOut)
         const float3 nRef = nBest;
 
         // 참조 face의 전면 평면값 dFront (inside: nRef·p <= dFront)
-        const float dFront = dot(nRef, cR + r[k] * ((&hR.x)[k] * signf(dot(nRef, r[k]))));
+        const float sgn = (dot(nRef, r[k]) >= 0.0f ? +1.0f : -1.0f);
+        const float dFront = dot(nRef, cR + r[k] * ((&hR.x)[k] * sgn));
 
         // incident face 사각형
         float3 incVerts[4]; int incFace = -1;
