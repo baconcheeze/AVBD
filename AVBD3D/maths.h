@@ -1,4 +1,4 @@
-﻿// maths.h
+// maths.h
 #pragma once
 #include <cmath>
 #include <algorithm> // std::min, std::max, std::clamp
