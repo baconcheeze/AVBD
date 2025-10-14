@@ -26,13 +26,20 @@
 #define PENALTY_MIN 1.0f
 #define PENALTY_MAX 1000000000.0f
 #define COLLISION_MARGIN 0.0005f
-#define STICK_THRESH 0.01f
-#define SHOW_CONTACTS true
-
+#define STICK_THRESH 0.0005f
+#define SHOW_CONTACTS false
+#define USE_INITIALCONSTRAINT true
 struct Rigid;
 struct Force;
 struct Manifold;
 struct Solver;
+
+struct SolverProcessOutput
+{
+    int bucketSize = 1;
+    int jointCount = 0;
+    int manifoldCount = 0;
+};
 
 struct Rigid {
     Solver* solver{};
@@ -117,7 +124,7 @@ struct Solver {
 
     void clear();
     void defaultParams();
-    int  step();
+    SolverProcessOutput  step();
     void draw();
 };
 
@@ -151,6 +158,9 @@ struct Force
     virtual void computeConstraint(float alpha) = 0;
     virtual void computeDerivatives(Rigid* body) = 0;
     virtual void draw() const {}
+
+    virtual bool isJoint() const { return false; }   // 추가
+    virtual bool isContact() const { return false; } // 선택 (원하면)
 };
 
 // 힌지 조인트: 위치 3행 + 스윙 2행(+ 선택 트위스트 1행) = 5~6행
@@ -205,6 +215,7 @@ struct Joint : Force {
     void computeConstraint(float alpha) override;
     void computeDerivatives(Rigid* body) override;
     void draw() const override;
+    virtual bool isJoint() const override { return true; }
 };
 
 // 3D 충돌 매니폴드(접촉점당: 법선1 + 마찰2 = 3행)
@@ -253,7 +264,7 @@ struct Manifold : Force
     void computeConstraint(float alpha) override;
     void computeDerivatives(Rigid* body) override;
     void draw() const override;
-
+    virtual bool isContact() const override { return true; }
     // 좁은단계: A,B OBB 충돌을 찾아 contacts를 채워야 함 (아래 정의 참고)
     static int collide(Rigid* A, Rigid* B, Contact* out, int maxOut);
 };
