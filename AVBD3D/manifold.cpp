@@ -1,4 +1,4 @@
-﻿#include "solver.h"
+#include "solver.h"
 #include <cmath>
 #include <cstring>
 
@@ -8,13 +8,16 @@ static inline int rowU(int i) { return i * 3 + 1; }
 static inline int rowV(int i) { return i * 3 + 2; }
 
 Manifold::Manifold(Solver* solver, Rigid* A, Rigid* B)
-    : Force(solver, A, B)
+    : Force(solver, A, B) , numContacts(0)
 {
     // 법선행은 “미는 힘만” 허용(= 당김 금지) → fmax=0, fmin=-INF  (부호는 구현 관례에 맞추세요)
     // 일단 모든 행 초기화
-    for (int i = 0; i < MAX_ROWS; i++) {
-        fmin[i] = -INFINITY; fmax[i] = INFINITY;
-        penalty[i] = 0; lambda[i] = 0;
+    for (int i = 0; i < MAX_ROWS; ++i) {
+        const bool isNormal = (i % 3) == 0;
+        fmin[i] = isNormal ? 0.0f : -INFINITY;  // λ_n ≥ 0만 허용(미는 힘만)
+        fmax[i] = INFINITY;                         // 나머지는 일단 ∞ (마찰은 이후 프레임별로 제한)
+        penalty[i] = 0.0f;
+        lambda[i] = 0.0f;
     }
 }
 
@@ -88,13 +91,13 @@ bool Manifold::initialize()
 
         // C0 (법선은 여유 간격 추가, 마찰은 0 목표)
         float3 d0 = pAw - pBw;
-        c.C0.x = (c.n.x * d0.x + c.n.y * d0.y + c.n.z * d0.z) + COLLISION_MARGIN; // 관통이면 +margin>0
+        c.C0.x = (c.n.x * d0.x + c.n.y * d0.y + c.n.z * d0.z) - COLLISION_MARGIN; // 관통이면 +margin>0
         c.C0.y = (c.u.x * d0.x + c.u.y * d0.y + c.u.z * d0.z); // 접선목표 0
         c.C0.z = (c.v.x * d0.x + c.v.y * d0.y + c.v.z * d0.z);
 
-        // 법선행은 “미는 힘만”
-        fmax[rowN(i)] = 0.0f;      // λ_n ≤ 0
-        fmin[rowN(i)] = -INFINITY; // λ_n 하한 없음
+        // 법선행은 “미는 힘만” (λ_n ≥ 0)
+        fmin[rowN(i)] = 0.0f;
+        fmax[rowN(i)] = INFINITY;
     }
 
     return true;
@@ -127,7 +130,7 @@ void Manifold::computeConstraint(float alpha)
             + dot6(c.JBv, dpB, dtB);
 
         // 최신 λ_n으로 마찰 경계 갱신 (pyramid 근사): |λ_t| ≤ μ |λ_n|
-        float bound = mu * std::fabs(lambda[rowN(i)]);
+        float bound = mu * std::max(0.0f, lambda[rowN(i)]);
         fmax[rowU(i)] = +bound;  fmin[rowU(i)] = -bound;
         fmax[rowV(i)] = +bound;  fmin[rowV(i)] = -bound;
 
