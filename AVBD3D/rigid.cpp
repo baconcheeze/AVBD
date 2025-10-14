@@ -8,50 +8,50 @@ Rigid::Rigid(Solver* solver_,
     float density,
     float friction_,
     float3 position,
-    float3 rotation,          // ¶óµð¾È Euler XYZ
+    float3 rotation,          // ë¼ë””ì•ˆ Euler XYZ
     float3 linearVelocity,
     float3 angularVelocity)
 {
-    // solver µî·Ï (´Ü¼ø head »ðÀÔ)
+    // solver ë“±ë¡ (ë‹¨ìˆœ head ì‚½ìž…)
     solver = solver_;
     next = solver->bodies;
     solver->bodies = this;
 
-    // ±âÇÏ/ÀçÁú
-    size = size_;          // ¡ç Rigid¿¡ size ÇÊµå°¡ ÀÖ¾î¾ß ÇÕ´Ï´Ù
-    friction = friction_;      // ¡ç Rigid¿¡ friction ÇÊµå°¡ ÀÖ¾î¾ß ÇÕ´Ï´Ù
+    // ê¸°í•˜/ìž¬ì§ˆ
+    size = size_;          // â† Rigidì— size í•„ë“œê°€ ìžˆì–´ì•¼ í•©ë‹ˆë‹¤
+    friction = friction_;      // â† Rigidì— friction í•„ë“œê°€ ìžˆì–´ì•¼ í•©ë‹ˆë‹¤
 
-    // Áú·® ¹× °æ°è ¹Ý°æ
-    mass = size.x * size.y * size.z * density;     // ±ÕÁú ¹Ú½º
-    radius = length3({ size.x * 0.5f, size.y * 0.5f, size.z * 0.5f }); // AABB ¹Ý´ë°¢¼±ÀÇ Àý¹Ý
+    // ì§ˆëŸ‰ ë° ê²½ê³„ ë°˜ê²½
+    mass = size.x * size.y * size.z * density;     // ê· ì§ˆ ë°•ìŠ¤
+    radius = length3({ size.x * 0.5f, size.y * 0.5f, size.z * 0.5f }); // AABB ë°˜ëŒ€ê°ì„ ì˜ ì ˆë°˜
 
-    // ¹Ú½º °ü¼º(Áß½É, ·ÎÄÃ Ãà ±âÁØ; ´ë°¢ °¡Á¤)
+    // ë°•ìŠ¤ ê´€ì„±(ì¤‘ì‹¬, ë¡œì»¬ ì¶• ê¸°ì¤€; ëŒ€ê° ê°€ì •)
     const float xx = size.x, yy = size.y, zz = size.z;
     const float Ix = mass * (yy * yy + zz * zz) / 12.0f;
     const float Iy = mass * (xx * xx + zz * zz) / 12.0f;
     const float Iz = mass * (xx * xx + yy * yy) / 12.0f;
     Ibody = { Ix, Iy, Iz };
 
-    // ÃÊ±â »óÅÂ
+    // ì´ˆê¸° ìƒíƒœ
     x = position;
     v = linearVelocity;
     w = angularVelocity;
 
-    q = quatFromEulerXYZ(rotation);   // ÀÚ¼¼
-    q = qnorm(q);                     // ¼öÄ¡ ¾ÈÀü
+    q = quatFromEulerXYZ(rotation);   // ìžì„¸
+    q = qnorm(q);                     // ìˆ˜ì¹˜ ì•ˆì „
 
-    // ¿ùµå °ü¼º (Iworld = R * Ibody * R^T)
+    // ì›”ë“œ ê´€ì„± (Iworld = R * Ibody * R^T)
     const float3x3 Rm = q.R();
     const float3x3 D = diagonal(Ix, Iy, Iz);
     Iworld = Rm * D * transpose3x3(Rm);
 
-    // ¿ú½ºÅ¸Æ®/°ü¼º »óÅÂ
+    // ì›œìŠ¤íƒ€íŠ¸/ê´€ì„± ìƒíƒœ
     x_initial = x;    q_initial = q;
     x_inertial = x;   q_inertial = q;
 
-    v_prev = v;               // ¡ç Rigid¿¡ prevVelocity°¡ ÀÖ´Ù¸é
-    // prevAngularVelocity °°Àº °Ô ÀÖÀ¸¸é ¿©±â¼­ w·Î ¼¼ÆÃ
-    // forces Çìµå ÃÊ±âÈ­°¡ ÇÊ¿äÇÏ¸é:
+    v_prev = v;               // â† Rigidì— prevVelocityê°€ ìžˆë‹¤ë©´
+    // prevAngularVelocity ê°™ì€ ê²Œ ìžˆìœ¼ë©´ ì—¬ê¸°ì„œ wë¡œ ì„¸íŒ…
+    // forces í—¤ë“œ ì´ˆê¸°í™”ê°€ í•„ìš”í•˜ë©´:
     // forces = nullptr;
 }
 
@@ -82,7 +82,7 @@ void Rigid::draw()
     const float3x3 Rm = R();
     auto X = [&](float3 rl)->float3 { return x + (Rm * rl); };
 
-    // 8 corners (local ¡æ world)
+    // 8 corners (local â†’ world)
     float3 p[8] = {
         X({-hx,-hy,-hz}), X({+hx,-hy,-hz}), X({+hx,+hy,-hz}), X({-hx,+hy,-hz}),
         X({-hx,-hy,+hz}), X({+hx,-hy,+hz}), X({+hx,+hy,+hz}), X({-hx,+hy,+hz})
