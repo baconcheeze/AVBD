@@ -1,4 +1,4 @@
-﻿// solver.cpp  (3D AVBD 버전)
+// solver.cpp  (3D AVBD 버전)
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -21,7 +21,7 @@ void Solver::defaultParams()
     gravity = -9.8f;    // 3D 시작값: 원하면 -9.8로
     iterations = 10;
 
-    beta = 200.0f;
+    beta = 300.0f;
     alpha = 0.99f;
     gamma = 0.95f;
     postStabilize = true;
