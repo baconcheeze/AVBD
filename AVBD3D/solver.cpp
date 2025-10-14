@@ -9,6 +9,8 @@
 Solver::Solver() : bodies(0) { defaultParams(); }
 Solver::~Solver() { clear(); }
 
+
+
 void Solver::clear()
 {
     while (bodies) delete bodies;
@@ -21,15 +23,17 @@ void Solver::defaultParams()
     gravity = -9.8f;    // 3D 시작값: 원하면 -9.8로
     iterations = 10;
 
-    beta = 300.0f;
+    beta = 1000.0f;
     alpha = 0.99f;
-    gamma = 0.95f;
+    gamma = 0.99f;
     postStabilize = true;
 }
 
 // 3D 6×6 프라이멀/듀얼 업데이트
-int Solver::step()
+SolverProcessOutput Solver::step()
 {
+    SolverProcessOutput solverProcessOutput;
+
     // Perform broadphase collision detection
     // This is a naive O(n^2) approach, but it is sufficient for small numbers of bodies in this sample.
     for (Rigid* bodyA = bodies; bodyA != 0; bodyA = bodyA->next)
@@ -38,8 +42,16 @@ int Solver::step()
         {
             float3 dp = bodyA->x - bodyB->x;
             float r = bodyA->radius + bodyB->radius;
-            if (dot(dp, dp) <= r * r && bodyA->constrainedTo(bodyB) == false)
+            if (dot(dp, dp) <= 2.0f * r * r && bodyA->constrainedTo(bodyB) == false)
+            {
                 new Manifold(this, bodyA, bodyB);
+
+                if (bodyA->size.x < 0.4f && bodyB->size.x < 0.4f)
+                {
+                    int asdf = 0;
+                }
+            }
+                
         }
     }
 
@@ -72,17 +84,29 @@ int Solver::step()
     for (Rigid* b = bodies; b; b = b->next) bodyList.push_back(b);
 
     std::vector<Force*> forceList; forceList.reserve(1024);
-    for (Force* f = forces; f; f = f->next) forceList.push_back(f);
+    for (Force* f = forces; f; f = f->next)
+    {
+        // initialize()에서 false였던 건 위에서 이미 delete 되었으므로 여기선 '살아있는' 것만 돈다
+        if (dynamic_cast<Manifold*>(f)) {
+            // 맨리폴드 개수(컨택 포인트 수가 아니라 바디-바디 페어 수)
+            solverProcessOutput.manifoldCount += 1;
+        }
+        else if (dynamic_cast<Joint*>(f)) {
+            solverProcessOutput.jointCount += 1;
+        }
+
+        forceList.push_back(f);
+    }
 
     std::vector<std::vector<Rigid*>> buckets;
     std::unordered_map<Rigid*, int> colorOf;
     std::vector<Rigid*> nodes;
-    int bucketSize = buildBodyColors(bodies, buckets, colorOf);
+    solverProcessOutput.bucketSize = buildBodyColors(bodies, buckets, colorOf);
 
     // ----- Bodies warmstart (x-, q-) -----
     const float3 gravityVector{ 0.0f, gravity, 0.0f };
 
-#pragma omp parallel for schedule(static) 
+//#pragma omp parallel for schedule(static) 
     for (int bi = 0; bi < (int)bodyList.size(); ++bi)
     {
         Rigid* b = bodyList[bi];
@@ -125,7 +149,7 @@ int Solver::step()
         // Primal update
         for (const std::vector<Rigid*>& bucket : buckets)
         {
-#pragma omp parallel for schedule(static)
+//#pragma omp parallel for schedule(static)
             for (int bi = 0; bi < (int)bucket.size(); ++bi)
             {
                 Rigid* body = bucket[bi];
@@ -200,11 +224,11 @@ int Solver::step()
         // === Dual update (원래 식과 동일) ===
         if (it < iterations)
         {
-#pragma omp parallel for schedule(static) 
+//#pragma omp parallel for schedule(static) 
             for (int k = 0; k < (int)forceList.size(); ++k)
             {
                 Force* f = forceList[k];
-
+                //if (f->isContact() == false) continue;
                 f->computeConstraint(currentAlpha);
                 for (int i = 0; i < f->rows(); ++i)
                 {
@@ -228,7 +252,7 @@ int Solver::step()
         // 속도 업데이트 (마지막 정상 반복 직후)
         if (it == iterations - 1)
         {
-#pragma omp parallel for schedule(static) 
+//#pragma omp parallel for schedule(static) 
             for (int bi = 0; bi < (int)bodyList.size(); ++bi)
             {
                 Rigid* b = bodyList[bi];
@@ -242,7 +266,8 @@ int Solver::step()
         }
     }
 
-    return (int)bodyList.size();
+
+    return solverProcessOutput;
 }
 
 void Solver::draw()
