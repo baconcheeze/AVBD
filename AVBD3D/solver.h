@@ -1,4 +1,4 @@
-﻿// solver.h
+// solver.h
 
 #pragma once
 #ifdef _WIN32
