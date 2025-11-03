@@ -1,4 +1,4 @@
-﻿#ifndef SOLVER_H
+#ifndef SOLVER_H
 #define SOLVER_H
 
 #include "util/includes.h"
@@ -35,7 +35,7 @@ struct Rigid {
     Solver* solver;
     Force* forces;
     Rigid* next;
-
+	std::vector<Rigid*> ignoreCollisionList;
     // position and rotation stored seperately since rotation is quaternion
     vec3 position; 
     quat rotation = quat(1, 0, 0, 0); 
