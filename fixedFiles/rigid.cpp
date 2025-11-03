@@ -51,9 +51,16 @@ Rigid::~Rigid() {
 
 bool Rigid::constrainedTo(Rigid* other) const {
     // check if this body is constrained to the other body
+    for(Rigid* body : ignoreCollisionList) {
+        if(body == other) {
+            return true;
+        }
+	}
+
     for (Force* f = forces; f != nullptr; f = f->next)
         if ((f->bodyA == this && f->bodyB == other) || (f->bodyA == other && f->bodyB == this)) 
             return true;
+
     return false;
 }
 
