@@ -39,43 +39,43 @@ static void sceneBoxStack(Solver* solver)
 
 static void sceneRope(Solver* solver)
 {
-    // ====== °¡·Î ¸·´ë N°³ Ã¼ÀÎ ======
-    const int   N = 10;                     // <- ¿øÇÏ´Â °³¼ö
-    const float linkLen = 0.5f;             // X¹æÇâ ±æÀÌ
-    const float thick = 0.12f;              // Y,Z µÎ²²
+    // ====== ê°€ë¡œ ë§‰ëŒ€ Nê°œ ì²´ì¸ ======
+    const int   N = 10;                     // <- ì›í•˜ëŠ” ê°œìˆ˜
+    const float linkLen = 0.5f;             // Xë°©í–¥ ê¸¸ì´
+    const float thick = 0.12f;              // Y,Z ë‘ê»˜
     const vec3  size = vec3(linkLen, thick, thick);
     const float density = 100.0f;
     const float friction = 0.4f;
 
-    // ÈùÁö °­¼º (¹ß»êÇÏ¸é posK¡é, swingK¡é ¶Ç´Â iterations¡è)
-    const vec3  posK = vec3(3e5f);          // À§Ä¡ 3Çà
-    const float swingK = 10.0f;             // ½ºÀ® 2Çà(ÈùÁö Á¦¾à)
-	const float twistK = 0.52f * swingK;    // Æ®À§½ºÆ® 1Çà(ÈùÁö Á¦¾à)
+    // íŒì§€ ê°•ì„± (ë°œì‚°í•˜ë©´ posKâ†“, swingKâ†“ ë˜ëŠ” iterationsâ†‘)
+    const vec3  posK = vec3(3e5f);          // ìœ„ì¹˜ 3í–‰
+    const float swingK = 10.0f;             // ìŠ¤ìœ™ 2í–‰(íŒì§€ ì œì•½)
+	const float twistK = 0.52f * swingK;    // íŠ¸ìœ„ìŠ¤íŠ¸ 1í–‰(íŒì§€ ì œì•½)
     const float frac = INFINITY;
 
-    // ÈùÁö Ãà/±âÁØ: ZÃà ÈùÁö¸é XYÆò¸éÀ¸·Î Èçµé¸²
-    const vec3 axisW(1, 0, 0);              // È¸ÀüÃà(ÈùÁö)
-    const vec3 refW(0, 0, 1);               // ½ºÀ® Æò¸é ±âÁØÃà
+    // íŒì§€ ì¶•/ê¸°ì¤€: Zì¶• íŒì§€ë©´ XYí‰ë©´ìœ¼ë¡œ í”ë“¤ë¦¼
+    const vec3 axisW(1, 0, 0);              // íšŒì „ì¶•(íŒì§€)
+    const vec3 refW(0, 0, 1);               // ìŠ¤ìœ™ í‰ë©´ ê¸°ì¤€ì¶•
 
-    // ¿ùµå ÇÇ¹ş(ÃµÀå °íÁ¤Á¡)
+    // ì›”ë“œ í”¼ë²—(ì²œì¥ ê³ ì •ì )
     const vec3 pivotW = vec3(0.0f, 5.0f, 0.0f);
 
-    // ·ÎÄÃ ¾ŞÄ¿µé: ¿À¸¥ÂÊ/¿ŞÂÊ ³¡
+    // ë¡œì»¬ ì•µì»¤ë“¤: ì˜¤ë¥¸ìª½/ì™¼ìª½ ë
     const vec3 r_right(+0.5f * linkLen, 0, 0);
     const vec3 r_left(-0.5f * linkLen, 0, 0);
 
-    // ¸µÅ© »ı¼º
+    // ë§í¬ ìƒì„±
     std::vector<Rigid*> links; links.reserve(N);
     for (int i = 0; i < N; ++i) {
         auto* L = new Rigid(solver, size, density, friction, pivotW - vec3(0.5f * linkLen + i * linkLen, 0, 0), quat(1, 0, 0, 0), vec6());
-        // º¸±â ÁÁÀº ÄÃ·¯ ±×¶óµ¥ÀÌ¼Ç
+        // ë³´ê¸° ì¢‹ì€ ì»¬ëŸ¬ ê·¸ë¼ë°ì´ì…˜
         float t = (N > 1) ? float(i) / float(N - 1) : 0.0f;
         L->color = vec4(0.85f * (1 - t) + 0.30f * t, 0.45f * (1 - t) + 0.70f * t, 0.45f, 0.75f);
 		L->rigidType = RIGID_ROPE;
         links.push_back(L);
     }
 
-    // 1) Ã¹ ¸·´ë¸¦ ¿ùµå ÇÇ¹ş¿¡ °É±â: L0ÀÇ +X ³¡ÀÌ pivotW¿¡ ¿Àµµ·Ï ¹èÄ¡
+    // 1) ì²« ë§‰ëŒ€ë¥¼ ì›”ë“œ í”¼ë²—ì— ê±¸ê¸°: L0ì˜ +X ëì´ pivotWì— ì˜¤ë„ë¡ ë°°ì¹˜
     //links[0]->position = pivotW - links[0]->rotation * r_right;
     if (true)
     {
@@ -90,18 +90,18 @@ static void sceneRope(Solver* solver)
     }
 
 
-    // 2) ³ª¸ÓÁö ¸·´ëµéÀ» Ã¼ÀÎÀ¸·Î ¿¬°á: A(left) <-> B(right)
+    // 2) ë‚˜ë¨¸ì§€ ë§‰ëŒ€ë“¤ì„ ì²´ì¸ìœ¼ë¡œ ì—°ê²°: A(left) <-> B(right)
     for (int i = 1; i < N; ++i) {
         Rigid* A = links[i - 1];
         Rigid* B = links[i];
 
-        // AÀÇ ¿ŞÂÊ ³¡ ¿ùµå À§Ä¡(ÈùÁö Á¡)
+        // Aì˜ ì™¼ìª½ ë ì›”ë“œ ìœ„ì¹˜(íŒì§€ ì )
         //vec3 hingeW = A->position + A->rotation * r_left;
 
-        // BÀÇ ¿À¸¥ÂÊ ³¡ÀÌ ±× ÈùÁö Á¡¿¡ ¿Àµµ·Ï ¹èÄ¡
+        // Bì˜ ì˜¤ë¥¸ìª½ ëì´ ê·¸ íŒì§€ ì ì— ì˜¤ë„ë¡ ë°°ì¹˜
         //B->position = hingeW - B->rotation * r_right;
 
-        // ÈùÁö Á¶ÀÎÆ® »ı¼º
+        // íŒì§€ ì¡°ì¸íŠ¸ ìƒì„±
 
         if (true)
         {
@@ -118,11 +118,11 @@ static void sceneRope(Solver* solver)
 
     }
 
-    // ÃÊ±â ¼Óµµ 0
+    // ì´ˆê¸° ì†ë„ 0
     for (auto* L : links) L->velocity = vec6(0);
 
-    // (¼±ÅÃ) ´õ ´Ü´ÜÇÏ°Ô Á¶ÀÌ·Á¸é ¹İº¹ ¼ö ´Ã¸®±â
-    solver->iterations = 10;  // 30~60 ±ÇÀå
+    // (ì„ íƒ) ë” ë‹¨ë‹¨í•˜ê²Œ ì¡°ì´ë ¤ë©´ ë°˜ë³µ ìˆ˜ ëŠ˜ë¦¬ê¸°
+    solver->iterations = 10;  // 30~60 ê¶Œì¥
 
     solver->useCollision = false;
     solver->useSelfCollision = false;
@@ -131,25 +131,25 @@ static void sceneRope(Solver* solver)
 static void scenePyramid(Solver* solver)
 {
     // Pyramid parameters
-    const int baseCount = 4;         // ¹Ø¸é ¹Ú½º °³¼ö (ÇÑ º¯)
-    const float boxSize = 0.5f;      // ÇÑ ¹Ú½ºÀÇ ÇÑ º¯ ±æÀÌ
-    const float gap = 0.02f;         // ¹Ú½º »çÀÌ ÀÛÀº °£°İ
-    const vec3 boxScale = vec3(boxSize); // ¹Ú½º Å©±â
+    const int baseCount = 4;         // ë°‘ë©´ ë°•ìŠ¤ ê°œìˆ˜ (í•œ ë³€)
+    const float boxSize = 0.5f;      // í•œ ë°•ìŠ¤ì˜ í•œ ë³€ ê¸¸ì´
+    const float gap = 0.02f;         // ë°•ìŠ¤ ì‚¬ì´ ì‘ì€ ê°„ê²©
+    const vec3 boxScale = vec3(boxSize); // ë°•ìŠ¤ í¬ê¸°
     const float density = 10.0f;
     const float friction = 0.4f;
 
-    // Ãş ¼ö = baseCount
+    // ì¸µ ìˆ˜ = baseCount
     for (int layer = 0; layer < baseCount; ++layer) {
-        int count = baseCount - layer; // ÇöÀç ÃşÀÇ ÇÑ º¯´ç ¹Ú½º ¼ö
+        int count = baseCount - layer; // í˜„ì¬ ì¸µì˜ í•œ ë³€ë‹¹ ë°•ìŠ¤ ìˆ˜
         if (count <= 0) break;
 
-        // ³ôÀÌ: ¹Ù´Ú À§·Î Ãş ½×±â (°¢ ¹Ú½ºÀÇ Áß½É y ÁÂÇ¥)
+        // ë†’ì´: ë°”ë‹¥ ìœ„ë¡œ ì¸µ ìŒ“ê¸° (ê° ë°•ìŠ¤ì˜ ì¤‘ì‹¬ y ì¢Œí‘œ)
         float y = (boxSize * 0.5f) + layer * (boxSize + gap);
 
-        // ÇÑ º¯ÀÇ ÀüÃ¼ ±æÀÌ (°£°İ Æ÷ÇÔ)
+        // í•œ ë³€ì˜ ì „ì²´ ê¸¸ì´ (ê°„ê²© í¬í•¨)
         float span = count * boxSize + (count - 1) * gap;
 
-        // °¡¿îµ¥ Á¤·ÄÀ» À§ÇÑ ¿ÀÇÁ¼Â
+        // ê°€ìš´ë° ì •ë ¬ì„ ìœ„í•œ ì˜¤í”„ì…‹
         float originOffset = (span - boxSize) * 0.5f;
 
         for (int i = 0; i < count; ++i) {
@@ -157,21 +157,21 @@ static void scenePyramid(Solver* solver)
                 float x = (i * (boxSize + gap)) - originOffset;
                 float z = (j * (boxSize + gap)) - originOffset;
 
-                // »ìÂ¦ ·£´ıÇÑ À§Ä¡ º¸Á¤(³Ê¹« ºÒ¾ÈÁ¤ÇÏ¸é 0À¸·Î ¼³Á¤)
+                // ì‚´ì§ ëœë¤í•œ ìœ„ì¹˜ ë³´ì •(ë„ˆë¬´ ë¶ˆì•ˆì •í•˜ë©´ 0ìœ¼ë¡œ ì„¤ì •)
                 float rx = uniform(-0.01f, 0.01f);
                 float rz = uniform(-0.01f, 0.01f);
 
-                // »ö»ó: Ãş¿¡ µû¶ó ±×¶óµ¥ÀÌ¼Ç
+                // ìƒ‰ìƒ: ì¸µì— ë”°ë¼ ê·¸ë¼ë°ì´ì…˜
                 float t = (baseCount > 1) ? float(layer) / float(baseCount - 1) : 0.0f;
                 vec4 color = vec4(0.6f * (1.0f - t) + 0.2f * t, 0.5f * (1.0f - t) + 0.8f * t, 0.4f + 0.1f * t, 1.0f);
 
-                // »ı¼º (rotation ±âº», velocity ±âº», color Àü´Ş)
+                // ìƒì„± (rotation ê¸°ë³¸, velocity ê¸°ë³¸, color ì „ë‹¬)
                 new Rigid(solver, boxScale, density, friction, vec3(x + rx, y, z + rz), quat(1, 0, 0, 0), vec6(), color);
             }
         }
     }
 
-    // ÃßÃµ: ¾ÈÁ¤¼ºÀ» À§ÇØ ¹İº¹ ¼ö ¾à°£ Áõ°¡
+    // ì¶”ì²œ: ì•ˆì •ì„±ì„ ìœ„í•´ ë°˜ë³µ ìˆ˜ ì•½ê°„ ì¦ê°€
     solver->iterations = 12;
 
     solver->useCollision = true;
@@ -189,22 +189,22 @@ static void sceneRopeAndPyramid(Solver* solver)
 
 static void sceneNet(Solver* solver)
 {
-    // ===== ÆÄ¶ó¹ÌÅÍ =====
-    const int   ROWS = 6;              // ¼¼·Î ³ëµå ¼ö
-    const int   COLS = 6;              // °¡·Î ³ëµå ¼ö
-    const float cell = 0.6f;            // ³ëµå °£°İ(°İÀÚ °£°İ)
-    const float thick = 0.06f;           // ¹ÙÀÇ µÎ²² (Y,Z ¹æÇâ)
-    const float density = 80.0f;           // ¹Ù ¹Ğµµ
-    const float friction = 0.45f;           // ¸¶Âû
-    const float y0 = 4.5f;            // ÃÊ±â ³ôÀÌ
+    // ===== íŒŒë¼ë¯¸í„° =====
+    const int   ROWS = 4;              // ì„¸ë¡œ ë…¸ë“œ ìˆ˜
+    const int   COLS = 4;              // ê°€ë¡œ ë…¸ë“œ ìˆ˜
+    const float cell = 0.6f;            // ë…¸ë“œ ê°„ê²©(ê²©ì ê°„ê²©)
+    const float thick = 0.06f;           // ë°”ì˜ ë‘ê»˜ (Y,Z ë°©í–¥)
+    const float density = 80.0f;           // ë°” ë°€ë„
+    const float friction = 0.45f;           // ë§ˆì°°
+    const float y0 = 4.5f;            // ì´ˆê¸° ë†’ì´
 
-    // ¹°¸® °­¼º(Á¶ÀÎÆ®)
-    const vec3  posK = vec3(3e5f);      // À§Ä¡ 3Çà (ºıºı)
-    const float swingK = 100.0f;           // ½ºÀ® 2Çà (º¼Á¶ÀÎÆ® ´À³¦ÀÌ¸é 0~ÀÛ°Ô)
-    const float twistK = 50.0f;           // Æ®À§½ºÆ® 1Çà (º¼Á¶ÀÎÆ®¸é 0)
-    const float frac = INFINITY;       // ÆÄ´Ü X
+    // ë¬¼ë¦¬ ê°•ì„±(ì¡°ì¸íŠ¸)
+    const vec3  posK = vec3(3e5f);      // ìœ„ì¹˜ 3í–‰ (ë¹¡ë¹¡)
+    const float swingK = 100.0f;           // ìŠ¤ìœ™ 2í–‰ (ë³¼ì¡°ì¸íŠ¸ ëŠë‚Œì´ë©´ 0~ì‘ê²Œ)
+    const float twistK = 50.0f;           // íŠ¸ìœ„ìŠ¤íŠ¸ 1í–‰ (ë³¼ì¡°ì¸íŠ¸ë©´ 0)
+    const float frac = INFINITY;       // íŒŒë‹¨ X
 
-    // ÈùÁö¿ë Ãà/±âÁØ (Å« ÀÇ¹Ì´Â ¾øÀ½; È¸Àü ÀÚÀ¯·Î µÑ °Å¸é 0ÀÌ¶ó Ãà ¿µÇâ ÀûÀ½)
+    // íŒì§€ìš© ì¶•/ê¸°ì¤€ (í° ì˜ë¯¸ëŠ” ì—†ìŒ; íšŒì „ ììœ ë¡œ ë‘˜ ê±°ë©´ 0ì´ë¼ ì¶• ì˜í–¥ ì ìŒ)
     const vec3 axisW(0, 1, 0);
     const vec3 refW(0, 0, 1);
 
@@ -213,32 +213,32 @@ static void sceneNet(Solver* solver)
 	const vec3 axisV(0, 0, 1);
 	const vec3 refV(1, 0, 0);
 
-    // ¼öÆò/¼öÁ÷ ¹ÙÀÇ ·ÎÄÃ ³¡Á¡
+    // ìˆ˜í‰/ìˆ˜ì§ ë°”ì˜ ë¡œì»¬ ëì 
     const vec3 h_left = vec3(-0.5f * cell, 0, 0);
     const vec3 h_right = vec3(+0.5f * cell, 0, 0);
     const vec3 v_top = vec3(0, 0, -0.5f * cell);
     const vec3 v_bot = vec3(0, 0, +0.5f * cell);
 
-    // ¹Ù Å©±â
-    const vec3 sizeH(cell, thick, thick);   // ¼öÆò ¹Ù (X ¹æÇâ ±æÀÌ)
-    const vec3 sizeV(thick, thick, cell);   // ¼öÁ÷ ¹Ù (Z ¹æÇâ ±æÀÌ)
+    // ë°” í¬ê¸°
+    const vec3 sizeH(cell, thick, thick);   // ìˆ˜í‰ ë°” (X ë°©í–¥ ê¸¸ì´)
+    const vec3 sizeV(thick, thick, cell);   // ìˆ˜ì§ ë°” (Z ë°©í–¥ ê¸¸ì´)
 
-    // °İÀÚ Áß¾Ó Á¤·Ä
+    // ê²©ì ì¤‘ì•™ ì •ë ¬
     const float x0 = -(COLS - 1) * cell * 0.5f;
     const float z0 = -(ROWS - 1) * cell * 0.5f;
 
-    // ===== ¹Ù »ı¼º: H(¼öÆò), V(¼öÁ÷) =====
+    // ===== ë°” ìƒì„±: H(ìˆ˜í‰), V(ìˆ˜ì§) =====
     std::vector<std::vector<Rigid*>> H(ROWS, std::vector<Rigid*>(COLS - 1, nullptr));
     std::vector<std::vector<Rigid*>> V(ROWS - 1, std::vector<Rigid*>(COLS, nullptr));
 
-    // ¼öÆò ¹Ù
+    // ìˆ˜í‰ ë°”
     for (int r = 0; r < ROWS; ++r) {
         for (int c = 0; c < COLS - 1; ++c) {
             const float cx = x0 + (c + 0.5f) * cell;
             const float cz = z0 + r * cell;
             auto* bar = new Rigid(solver, sizeH, density, friction,
                 vec3(cx, y0, cz), quat(1, 0, 0, 0), vec6());
-            // ÄÃ·¯ ±×¶óµ¥ÀÌ¼Ç (°¡µ¶)
+            // ì»¬ëŸ¬ ê·¸ë¼ë°ì´ì…˜ (ê°€ë…)
             float t = (ROWS > 1 ? float(r) / (ROWS - 1) : 0.0f);
             bar->color = vec4(0.25f + 0.50f * t, 0.65f - 0.25f * t, 0.85f - 0.25f * t, 0.9f);
 			bar->rigidType = RIGID_NET;
@@ -246,7 +246,7 @@ static void sceneNet(Solver* solver)
         }
     }
 
-    // ¼öÁ÷ ¹Ù
+    // ìˆ˜ì§ ë°”
     for (int r = 0; r < ROWS - 1; ++r) {
         for (int c = 0; c < COLS; ++c) {
             const float cx = x0 + c * cell;
@@ -260,8 +260,44 @@ static void sceneNet(Solver* solver)
         }
     }
 
-    // ===== °°Àº Çà/¿­ ¹Ùµé end-to-end ÈùÁö Ã¼ÀÎÀ¸·Î ¿¬°á =====
-    // (¼öÆò Ã¼ÀÎ) H[r][c-1].right  <->  H[r][c].left
+	// ===== ê°™ì€ ë…¸ë“œë¥¼ ê³µìœ í•˜ëŠ” ë°”ë“¤ì„ ignoreCollision ì²˜ë¦¬ =====
+    // === [IGNORE LIST êµ¬ì¶•] : ê°™ì€ ë…¸ë“œë¥¼ ê³µìœ í•˜ëŠ” ëª¨ë“  bar ìŒì„ ì„œë¡œ ignore ===
+    auto addIgnorePair = [](Rigid* a, Rigid* b) {
+        if (!a || !b || a == b) return;
+        auto& va = a->ignoreCollisionList;
+        auto& vb = b->ignoreCollisionList;
+        if (std::find(va.begin(), va.end(), b) == va.end()) va.push_back(b);
+        if (std::find(vb.begin(), vb.end(), a) == vb.end()) vb.push_back(a);
+        };
+
+    // node(r,c)ì— ì ‘ì†í•˜ëŠ” bar ëª¨ìœ¼ê¸°:
+    //  - ìˆ˜í‰: H[r][c]ì˜ left, H[r][c-1]ì˜ right
+    //  - ìˆ˜ì§: V[r][c]ì˜ top,  V[r-1][c]ì˜ bottom
+    std::vector<Rigid*> nodeBars;
+    nodeBars.reserve(4);
+
+    auto gatherBarsAtNode = [&](int r, int c) {
+        nodeBars.clear();
+        if (c < COLS - 1 && H[r][c])       nodeBars.push_back(H[r][c]);     // left end
+        if (c > 0 && H[r][c - 1])           nodeBars.push_back(H[r][c - 1]);   // right end
+        if (r < ROWS - 1 && V[r][c])      nodeBars.push_back(V[r][c]);     // top end
+        if (r > 0 && V[r - 1][c])           nodeBars.push_back(V[r - 1][c]);   // bottom end
+        };
+
+    for (int r = 0; r < ROWS; ++r) {
+        for (int c = 0; c < COLS; ++c) {
+            gatherBarsAtNode(r, c);
+            // ê°™ì€ ë…¸ë“œì— ì—°ê²°ëœ ëª¨ë“  barë¥¼ ì„œë¡œ ignore
+            for (size_t i = 0; i < nodeBars.size(); ++i) {
+                for (size_t j = i + 1; j < nodeBars.size(); ++j) {
+                    addIgnorePair(nodeBars[i], nodeBars[j]);
+                }
+            }
+        }
+    }
+
+    // ===== ê°™ì€ í–‰/ì—´ ë°”ë“¤ end-to-end íŒì§€ ì²´ì¸ìœ¼ë¡œ ì—°ê²° =====
+    // (ìˆ˜í‰ ì²´ì¸) H[r][c-1].right  <->  H[r][c].left
     for (int r = 0; r < ROWS; ++r) {
         for (int c = 1; c < COLS - 1; ++c) {
             new Joint(solver,
@@ -274,7 +310,7 @@ static void sceneNet(Solver* solver)
         }
     }
 
-    // (¼öÁ÷ Ã¼ÀÎ) V[r-1][c].bot  <->  V[r][c].top
+    // (ìˆ˜ì§ ì²´ì¸) V[r-1][c].bot  <->  V[r][c].top
     for (int r = 1; r < ROWS - 1; ++r) {
         for (int c = 0; c < COLS; ++c) {
             new Joint(solver,
@@ -287,22 +323,22 @@ static void sceneNet(Solver* solver)
         }
     }
 
-    // ===== ±³Â÷Á¡(H/V) ¹­±â: °¢ ³ëµå¿¡¼­ ¼öÆò/¼öÁ÷ ¹ÙÀÇ ³¡Á¡À» ÇÏ³ª·Î °á¼Ó =====
-    // node(r,c)¿¡¼­ »ç¿ëÇÒ ´ëÇ¥ ¼öÆò/¼öÁ÷ ¹Ù¿Í ±× ³¡Á¡À» °í¸£°í, ¼­·Î Joint·Î ¹­´Â´Ù.
+    // ===== êµì°¨ì (H/V) ë¬¶ê¸°: ê° ë…¸ë“œì—ì„œ ìˆ˜í‰/ìˆ˜ì§ ë°”ì˜ ëì ì„ í•˜ë‚˜ë¡œ ê²°ì† =====
+    // node(r,c)ì—ì„œ ì‚¬ìš©í•  ëŒ€í‘œ ìˆ˜í‰/ìˆ˜ì§ ë°”ì™€ ê·¸ ëì ì„ ê³ ë¥´ê³ , ì„œë¡œ Jointë¡œ ë¬¶ëŠ”ë‹¤.
     auto bindNodeHV = [&](int r, int c) {
-        // ´ëÇ¥ ¼öÆò¹Ù ¼±ÅÃ (¿ì¼± ¿À¸¥ÂÊ ¹ÙÀÇ left, ¾øÀ¸¸é ¿ŞÂÊ ¹ÙÀÇ right)
+        // ëŒ€í‘œ ìˆ˜í‰ë°” ì„ íƒ (ìš°ì„  ì˜¤ë¥¸ìª½ ë°”ì˜ left, ì—†ìœ¼ë©´ ì™¼ìª½ ë°”ì˜ right)
         Rigid* hBar = nullptr; vec3 hEnd;
         if (c < COLS - 1 && H[r][c]) { hBar = H[r][c];      hEnd = h_left; }
         else if (c > 0 && H[r][c - 1]) { hBar = H[r][c - 1];    hEnd = h_right; }
-        else return; // ¼öÆò¹Ù ¾øÀ½
+        else return; // ìˆ˜í‰ë°” ì—†ìŒ
 
-        // ´ëÇ¥ ¼öÁ÷¹Ù ¼±ÅÃ (¿ì¼± ¾Æ·¡ÂÊ ¹ÙÀÇ top, ¾øÀ¸¸é À§ÂÊ ¹ÙÀÇ bot)
+        // ëŒ€í‘œ ìˆ˜ì§ë°” ì„ íƒ (ìš°ì„  ì•„ë˜ìª½ ë°”ì˜ top, ì—†ìœ¼ë©´ ìœ„ìª½ ë°”ì˜ bot)
         Rigid* vBar = nullptr; vec3 vEnd;
         if (r < ROWS - 1 && V[r][c]) { vBar = V[r][c];      vEnd = v_top; }
         else if (r > 0 && V[r - 1][c]) { vBar = V[r - 1][c];    vEnd = v_bot; }
-        else return; // ¼öÁ÷¹Ù ¾øÀ½
+        else return; // ìˆ˜ì§ë°” ì—†ìŒ
 
-        // µÎ ³¡Á¡ÀÌ °°Àº ¿ùµå À§Ä¡¿¡ ¿Àµµ·Ï Æ÷Áö¼Ç 3Çà Áß½ÉÀ¸·Î ¹­±â
+        // ë‘ ëì ì´ ê°™ì€ ì›”ë“œ ìœ„ì¹˜ì— ì˜¤ë„ë¡ í¬ì§€ì…˜ 3í–‰ ì¤‘ì‹¬ìœ¼ë¡œ ë¬¶ê¸°
         new Joint(solver,
             /*A*/ hBar, /*B*/ vBar,
             /*rA*/ hEnd, /*rB*/ vEnd,
@@ -318,12 +354,12 @@ static void sceneNet(Solver* solver)
         }
     }
 
-    // ===== ³× ±ÍÅüÀÌ °øÁß °íÁ¤ =====
+    // ===== ë„¤ ê·€í‰ì´ ê³µì¤‘ ê³ ì • =====
     auto pinNode = [&](int r, int c) {
-        // node(r,c)ÀÇ À§Ä¡(¿ùµå)
+        // node(r,c)ì˜ ìœ„ì¹˜(ì›”ë“œ)
         const vec3 pivotW = vec3(x0 + c * cell, y0, z0 + r * cell);
 
-        // ÀÌ ³ëµå¿¡¼­ ¾µ ´ëÇ¥ ¹Ù/³¡Á¡À» ÀçÈ°¿ë (bind¿Í µ¿ÀÏ ·ÎÁ÷)
+        // ì´ ë…¸ë“œì—ì„œ ì“¸ ëŒ€í‘œ ë°”/ëì ì„ ì¬í™œìš© (bindì™€ ë™ì¼ ë¡œì§)
         Rigid* bar = nullptr; vec3 rEnd;
         if (c < COLS - 1 && H[r][c]) { bar = H[r][c];   rEnd = h_left; }
         else if (c > 0 && H[r][c - 1]) { bar = H[r][c - 1]; rEnd = h_right; }
@@ -331,13 +367,13 @@ static void sceneNet(Solver* solver)
         else if (r > 0 && V[r - 1][c]) { bar = V[r - 1][c]; rEnd = v_bot; }
         else return;
 
-        // ¿ùµå °íÁ¤: A=nullptr, rA=pivotW(¿ùµå ÁÂÇ¥), B=bar, rB=rEnd(·ÎÄÃ)
+        // ì›”ë“œ ê³ ì •: A=nullptr, rA=pivotW(ì›”ë“œ ì¢Œí‘œ), B=bar, rB=rEnd(ë¡œì»¬)
         new Joint(solver,
             /*A*/ nullptr, /*B*/ bar,
             /*rA*/ pivotW, /*rB*/ rEnd,
             /*axisA*/ axisW, /*axisB*/ axisW,
             /*refA*/  refW,  /*refB*/  refW,
-            /*posK*/  posK,  /*swingK*/ 1.0f,   // »ìÂ¦ È¸Àü ¾ïÁ¦(¿É¼Ç)
+            /*posK*/  posK,  /*swingK*/ 1.0f,   // ì‚´ì§ íšŒì „ ì–µì œ(ì˜µì…˜)
             /*frac*/  frac,  /*twistK*/ 0.5f);
         };
 
@@ -346,7 +382,7 @@ static void sceneNet(Solver* solver)
     pinNode(ROWS - 1, 0);
     pinNode(ROWS - 1, COLS - 1);
 
-    // ÃÊ±â ¼Óµµ 0
+    // ì´ˆê¸° ì†ë„ 0
     for (int r = 0; r < ROWS; ++r)
         for (int c = 0; c < COLS - 1; ++c)
             if (H[r][c]) H[r][c]->velocity = vec6(0);
@@ -354,10 +390,10 @@ static void sceneNet(Solver* solver)
         for (int c = 0; c < COLS; ++c)
             if (V[r][c]) V[r][c]->velocity = vec6(0);
 
-    // ¼ö·Å¼º º¸¿Ï
-    solver->iterations = 10;   // 20~40 ±ÇÀå
+    // ìˆ˜ë ´ì„± ë³´ì™„
+    solver->iterations = 10;   // 20~40 ê¶Œì¥
     solver->useCollision = true;
-    solver->useSelfCollision = false;
+    solver->useSelfCollision = true;
 }
 
 static void sceneNetAndBoxes(Solver* solver)
@@ -365,8 +401,8 @@ static void sceneNetAndBoxes(Solver* solver)
     sceneBox(solver);
 	sceneNet(solver);
 
-    // ¼ö·Å¼º º¸¿Ï
-    solver->iterations = 10;   // 20~40 ±ÇÀå
+    // ìˆ˜ë ´ì„± ë³´ì™„
+    solver->iterations = 10;   // 20~40 ê¶Œì¥
     solver->useCollision = true;
     solver->useSelfCollision = true;
 }
